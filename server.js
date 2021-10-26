@@ -1,49 +1,49 @@
 // Global variables
-const express = require('express');
-const path = require('path');
+const express = require("express");
+const path = require("path");
 const { v4: uuidv4 } = require('uuid');
 const fs = require('fs');
+const JsonData = require("./db/db.json");
 
-// Environment variable PORT tells the web server what port to listen on
-const PORT = process.env.PORT || 3001;
+let storedData = JsonData;
 
 // Express server application variable
 const app = express();
 
+// Environment variable PORT tells the web server what port to listen on
+const PORT = process.env.PORT || 3001;
+
 // Middleware for parsing JSON and urlencoded form data
+app.use(express.static('public'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static('./public'));
 
-// Tells Express server to start listening on the defined port number
-app.listen(PORT, () =>
-  console.log(`Express server listening at http://localhost:${PORT}`)
-);
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, "./index.html"))
+});
+
+app.get('/notes', (req, res) => {
+  res.sendFile(path.join(__dirname, "./public/notes.html"))
+});
+
+app.get('/api/notes', (req, res) => {
+  return res.status(200).json(storedData)
+});
 
 app.post('/api/notes', (req, res) => {
   let notesData = req.body
   notesData.id = uuidv4()
 
-  currentData.push(notesData)
+  storedData.push(notesData)
 
-  fs.writeFile('./db/db.json', JSON.stringify(currentData), (err) => {
+  fs.writeFile('./db/db.json', JSON.stringify(storedData), (err) => {
     err ? console.error(err) : console.log('Success!')}
   )
 
-  res.status(201).json(currentData)
+  res.status(201).json(storedData)
 });
 
-app.delete('/api/notes/:id', (req, res) => {
-  let deleteNoteId = req.params.id
-  currentData = currentData.filter(note => note.id != deleteNoteId)
-
-  fs.writeFile('./db/db.json', JSON.stringify(currentData), (err) =>{
-    err ? console.error(err) : console.log('Deleted!')}
-  )
-
-  res.status(200).json(currentData)
-});
-
-// Variables to pull in and use the routes from the notes.js app
-const notesRouter = require('./routes/notes');
-app.use('./routes/notes', notesRouter);
+// Tells Express server to start listening on the defined port number
+app.listen(PORT, () =>
+  console.log(`Express server listening at http://localhost:${PORT}`)
+);
